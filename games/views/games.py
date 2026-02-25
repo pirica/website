@@ -49,7 +49,7 @@ class GameListView(generics.GenericAPIView):
         if game_slugs:
             return base_query.filter(
                 Q(slug__in=game_slugs) | Q(aliases__slug__in=game_slugs),
-            )
+            ).distinct()
         # This is to be deprecated, starting from 0.5.8, the client won't use that anymore
         if "gogid" in self.request.data:
             gogids = [
@@ -57,12 +57,12 @@ class GameListView(generics.GenericAPIView):
             ]
             return base_query.filter(
                 provider_games__slug__in=gogids, provider_games__provider__name="gog"
-            )
+            ).distinct()
         if "humblestoreid" in self.request.data:
             return base_query.filter(
                 provider_games__slug__in=self.request.data["humblestoreid"],
                 provider_games__provider__name="humblebundle",
-            )
+            ).distinct()
         if (
             not self.request.user.is_authenticated
             or not self.request.user.show_adult_content
@@ -113,7 +113,7 @@ class ServiceGameListView(generics.GenericAPIView):
             change_for__isnull=True,
             provider_games__slug__in=appids,
             provider_games__provider__name=service,
-        )
+        ).distinct()
 
     def post(self, _request, service):
         """This view is post only and accepts a payload in JSON"""

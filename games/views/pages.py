@@ -157,7 +157,7 @@ class GameList(ListView):
             or not self.request.user.show_adult_content
         ):
             queryset = queryset.exclude(Q(flags=models.Game.flags.adult_only))
-        return queryset
+        return queryset.distinct()
 
     VALID_FLAGS = {"open_source", "free"}
 

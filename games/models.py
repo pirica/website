@@ -139,6 +139,7 @@ class GameManager(models.Manager):
                 | Q(platforms__default_installer__startswith="{")
                 | Q(provider_games__provider__name__in=("gog", "steam", "humble"))
             )
+            .distinct()
             .order_by("name")
             .annotate(installer_count=Count("installers", distinct=True))
         )
