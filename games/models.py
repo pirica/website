@@ -14,7 +14,7 @@ import six
 import yaml
 from bitfield import BitField
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
 from django.db.models import Count, Q
@@ -419,8 +419,12 @@ class Game(models.Model):
             alias.game = self
             alias.save()
 
-        # Create a new alias from the other game
-        GameAlias.objects.create(game=self, name=other_game.name, slug=other_game.slug)
+        # Create a new alias from the other game, unless one with that slug
+        # already exists (the unique constraint would otherwise blow up the merge)
+        try:
+            GameAlias.objects.create(game=self, name=other_game.name, slug=other_game.slug)
+        except IntegrityError:
+            pass
 
         # Merge genres
         for genre in other_game.genres.all():
@@ -648,8 +652,14 @@ class GameAlias(models.Model):
     """Alternate names and spellings a game might be known as"""
 
     game = models.ForeignKey(Game, related_name="aliases", on_delete=models.CASCADE)
-    slug = models.SlugField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
+
+    def clean(self):
+        if self.slug and Game.objects.filter(slug=self.slug).exists():
+            raise ValidationError(
+                {"slug": "An existing game already uses this slug as its primary slug."}
+            )
 
 
 class ScreenshotManager(models.Manager):
