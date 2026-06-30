@@ -24,7 +24,9 @@ dependencies are still required to compile psycopg2, Pillow, and lxml::
         libffi-dev libpq-dev libjpeg-dev
 
     # Red Hat / Fedora
-    sudo dnf install libpq-devel libxml2-devel libxslt-devel
+    sudo dnf install gcc make git curl ImageMagick \
+        libxml2-devel libxslt-devel openssl-devel \
+        libffi-devel libpq-devel libjpeg-turbo-devel zlib-devel
 
 Environment variables live in ``.env.local`` at the repository root.
 Copy the sample below and fill in real values::
@@ -80,9 +82,11 @@ there are snapshots on the Github releases page:
 https://github.com/lutris/website/releases
 
 The installer scripting documentation is not shipped with the website but
-with the client, if you want to build the docs, you'll need to get the
-client and compile the rst files into HTML. All this process is
-automated::
+with the client. Building it is required, not optional: the test suite and
+the installer editor both render ``templates/docs/installers.html``, which
+is generated from the client's rst files. Without it those tests fail with
+``TemplateDoesNotExist: docs/installers.html``. Fetch the client and compile
+the docs (the whole process is automated)::
 
     uv run make client
     uv run make docs
