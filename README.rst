@@ -103,13 +103,17 @@ Run the development server with::
 Redis configuration
 ===================
 
-The lutris websites uses Redis as a cache. Install with::
+The lutris websites uses Redis as a cache (db 1) and as the Celery broker
+(db 0). ``volatile-lru`` only evicts keys that have a TTL, so the cache can be
+capped without ever dropping the TTL-less broker keys. Install with::
 
     docker run -d \
         --name lutriscache \
         --restart unless-stopped \
         -p 6379:6379 \
-        redis:latest
+        redis:latest \
+        redis-server --maxmemory 1gb --maxmemory-policy volatile-lru \
+            --save 900 1 --save 300 100 --save 60 10000
 
 
 Postgresql configuration
