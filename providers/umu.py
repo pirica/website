@@ -37,12 +37,21 @@ def fix_steam_ids():
 
 
 def update_repository():
-    if os.path.exists(PROTONFIXES_PATH):
-        repo = git.Repo(PROTONFIXES_PATH)
-        remote = git.remote.Remote(repo, "origin")
-        remote.pull()
-    else:
-        repo = git.Repo.clone_from(PROTONFIXES_URL, PROTONFIXES_PATH)
+    """Sync the local protonfixes mirror with upstream.
+
+    The checkout is only ever read from, so any local divergence (or an upstream
+    force-push) is discarded instead of merged. A plain pull fails permanently
+    once the histories diverge.
+    """
+    if not os.path.exists(PROTONFIXES_PATH):
+        git.Repo.clone_from(PROTONFIXES_URL, PROTONFIXES_PATH)
+        return
+    repo = git.Repo(PROTONFIXES_PATH)
+    origin = repo.remote("origin")
+    origin.fetch(prune=True)
+    repo.git.remote("set-head", "origin", "--auto")
+    repo.git.reset("--hard", origin.refs.HEAD.reference.name)
+    repo.git.clean("-fdx")
 
 
 def get_umu_api_games():
@@ -361,6 +370,7 @@ def export_umu_games():
 def save_umu_games():
     """Save the list of umu games to a file"""
     umu_games = export_umu_games()
+    umu_entries = []
     if os.path.exists(UMU_GAMES_PATH):
         with open(UMU_GAMES_PATH, "r") as umu_file:
             umu_entries = json.load(umu_file)
